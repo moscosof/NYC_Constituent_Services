@@ -1,0 +1,114 @@
+---
+title: "NYC Constituent Services"
+author: "Francia Moscoso"
+date: "May 10, 2016"
+output: html_document
+---
+<br>
+
+```{r LoadLib, message=F, warning=F}
+
+library(dplyr)
+library(ggplot2)
+library(gridExtra)
+library(grid)
+library(cowplot)
+library(eeptools)
+library(devtools)
+library(easyGgplot2)
+
+#Default directory
+setwd("~/R_work")
+
+```
+
+
+<br>
+```{r comment="", echo=FALSE}
+train <- read.csv("./datasets/NYC_ConstituentServices.csv")
+dim(train)
+str(train)
+
+SummBrooklyn <- train %>% 
+      select(BOROUGH, COMPLAINT_TYPE,OPENDATE) %>%                           filter(BOROUGH=="Brooklyn") %>%  
+      group_by(BOROUGH,Complaint_Type= COMPLAINT_TYPE) %>% 
+      summarise(Total=n()) %>%  arrange(desc(Total))
+
+SummBrooklyn_B <- SummBrooklyn[1:6,]
+SummBrooklyn_B$Complaint_Type <- droplevels(SummBrooklyn_B$Complaint_Type)
+
+SummQueens<- train %>% 
+      select(BOROUGH, COMPLAINT_TYPE,OPENDATE) %>%                           filter(BOROUGH=="Queens") %>%  
+      group_by(BOROUGH, Complaint_Type= COMPLAINT_TYPE) %>% 
+      summarise(Total=n())  %>% arrange(desc(Total))
+      
+SummQueens_B <- SummQueens[1:6,]   
+SummQueens_B$Complaint_Type <- droplevels(SummQueens_B$Complaint_Type)
+
+SummBronx<- train %>% 
+      select(BOROUGH, COMPLAINT_TYPE,OPENDATE) %>%                           filter(BOROUGH=="Bronx") %>%  
+      group_by(BOROUGH, Complaint_Type= COMPLAINT_TYPE) %>% 
+      summarise(Total=n())  %>% arrange(desc(Total))
+      
+SummBronx_B <- SummBronx[1:6,]
+SummBronx_B$Complaint_Type <- droplevels(SummBronx_B$Complaint_Type)
+
+SummManhattan<- train %>% 
+      select(BOROUGH, COMPLAINT_TYPE,OPENDATE) %>%                           filter(BOROUGH=="Manhattan") %>%  
+      group_by(BOROUGH, Complaint_Type= COMPLAINT_TYPE) %>% 
+      summarise(Total=n())  %>% arrange(desc(Total))
+      
+SummManhattan_B <- SummManhattan[1:6,]
+SummManhattan_B$Complaint_Type <- droplevels(SummManhattan_B$Complaint_Type)
+
+
+AllBorough <- rbind(SummBrooklyn_B, SummQueens_B, SummBronx_B,
+                    SummManhattan_B)  
+
+AllBorough <- AllBorough[with(AllBorough,order(BOROUGH,Total)),] 
+
+#Default sort
+levels(AllBorough$Complaint_Type)
+# Sorting from higher to smallest quantity complaints
+AllBorough$Complaint_Type = factor(AllBorough$Complaint_Type,
+    levels(AllBorough$Complaint_Type)[c(3,6,1,4,2,5,8,7,9,10)])
+#Sorted  
+levels(AllBorough$Complaint_Type) 
+```
+<br>
+<br>
+```{r comment="", echo=TRUE}
+ 
+
+p <-ggplot(AllBorough, aes(x="", y=Total, fill=Complaint_Type, 
+order = -as.numeric(AllBorough$Complaint_Type)) ) + 
+geom_bar(stat = "identity") + 
+facet_grid(facets=. ~ BOROUGH) +
+ggtitle("Top Constituent Services by Complaint Type\n") +
+    theme(axis.title.x = element_blank()) +
+  background_grid(colour.minor = "grey98")  
+
+ggdraw(add_sub(p, "SOURCE DATASET NYC Council Constituent Services for the period January 1,2015 through May 4,2016",size=9, x=0.9,y=0.5, hjust = 0.6, vjust = 0.5))
+
+
+```
+<br>
+<br>
+```{r comment="", echo=TRUE}
+
+colorBar = rep(c("red", "blue", "yellow", "green"),6)
+
+ggplot(AllBorough, aes(x=BOROUGH, y=Total, fill=BOROUGH)) + 
+geom_bar(stat = "identity") + 
+facet_wrap( ~ Complaint_Type, scales="free_y", ncol=4) +
+ggtitle("Top Constituent Services by Complaint Type\n") +
+theme(axis.title.x = element_blank(),
+      axis.text.x = element_blank(),
+      strip.text.x = element_text(size=7),
+      #legend.position = c(.83, .15),      
+      legend.title = element_blank(),
+      legend.position="bottom") 
+
+
+```
+
